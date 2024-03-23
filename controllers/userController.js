@@ -1,4 +1,5 @@
 const connectDB = require("../config/db"); //import the connection
+const bcrypt = require("bcryptjs");
 
 //get all users from DB
 const getAllUsers = async (req, res, next) => {
@@ -67,6 +68,7 @@ const deleteAUser = async (req, res) => {
 //   }
 //  };
 
+//==============================================
 // update user from DB. This ensures you only update the values changed
 // and leaves the rest as they were
 const updateAUser = async (req, res) => {
@@ -115,51 +117,81 @@ const updateAUser = async (req, res) => {
 
 // create userfrom DB
 const registerAUser = async (req, res) => {
+  //get data from user
   const { username, phone, user_pwd } = req.body;
 
+  //ensure all data is sent
   if (!username || !phone || !user_pwd) {
     res.status(404).send("Details missing");
     return;
   }
 
-  try {
-    const [user] = await connectDB.query(
-      "INSERT INTO users (username, phone, user_pwd) VALUES ( ?, ?, ?)",
-      [username, phone, user_pwd]
-    );
-    res.status(200).send(user);
-  } catch (error) {
-    res.status(500).send(error.message);
+  //ensure no such user exists in the db
+  const [user] = await connectDB.query(
+    "SELECT * FROM users WHERE username = ?",
+    [username]
+  );
+
+  //if no such user exists result is zero
+  if (user.length == 0) {
+    try {
+      //hash the password for security
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(user_pwd, salt);
+
+      const [user] = await connectDB.query(
+        "INSERT INTO users (username, phone, user_pwd) VALUES ( ?, ?, ?)",
+        [username, phone, hashedPassword]
+      );
+      res.status(200).send(user);
+    } catch (error) {
+      res.status(500).send(error.message);
+    }
+  } else {
+    res.status(400).send("User already exists");
   }
 };
 
 const loginAUser = async (req, res) => {
+  //get data from client
   const { username, user_pwd } = req.body;
 
+  //ensure we have the data we need
   if (!username || !user_pwd) {
     res.status(404).send("Username and password are required");
     return;
   }
 
-  try {
-    // Query the database to find a user with the provided username and password
-    const [user] = await connectDB.query(
-      "SELECT * FROM users WHERE username = ? AND user_pwd = ?",
-      [username, user_pwd]
-    );
+  //ensure this user exists in the db
+  const [user] = await connectDB.query(
+    "SELECT * FROM users WHERE username = ?",
+    [username]
+  );
 
-    // Check if a user was found
-    if (user.length > 0) {
-      // User is authenticated, you can set up a session or send a success response
-      // For simplicity, we'll just send a success response
-      res.status(200).send("Login successful");
-    } else {
-      // No user found, send an error response
-      res.status(401).send("Incorrect username or password");
+  //if no user exists
+  if (user.length == 0) {
+    res.status(400).send("no such username exists");
+  } else {
+    try {
+      // try to decrypt the password
+      let db_pwd = user[0].user_pwd;
+      let match = await bcrypt.compare(user_pwd, db_pwd);
+
+      if (match) {
+        //send back the user to client
+        const [user] = await connectDB.query(
+          "SELECT * FROM users WHERE username = ?",
+          [username]
+        );
+        res.status(200).send(user[0]);
+      } else {
+        // No user found, send an error response
+        res.status(401).send("Incorrect username or password");
+      }
+    } catch (error) {
+      // Handle any errors that occur during the query
+      res.status(500).send(error.message);
     }
-  } catch (error) {
-    // Handle any errors that occur during the query
-    res.status(500).send(error.message);
   }
 };
 
