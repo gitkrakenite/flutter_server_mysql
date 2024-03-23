@@ -6,6 +6,7 @@ const colors = require("colors");
 
 //import local
 const useRouter = require("./routes/userRouter");
+const bizRouter = require("./routes/bizRouter");
 
 // middlewares
 const app = express();
@@ -17,6 +18,7 @@ const PORT = process.env.PORT || 5000;
 //routes
 app.get("/", (req, res) => res.status(200).send("API RUNNING WELL"));
 app.use("/api/v1/users", useRouter);
+app.use("/api/v1/biz", bizRouter);
 
 //global error handler
 app.use((err, req, res, next) => {
