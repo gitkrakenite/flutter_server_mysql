@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 const PORT = process.env.PORT || 5000;
 
 //routes
-app.get("/", (req, res) => res.status(200).send("API RUNNING WELL"));
+app.get("/", (req, res) => res.status(200).send("API RUNNING Succesfully"));
 app.use("/api/v1/users", useRouter);
 app.use("/api/v1/biz", bizRouter);
 
