@@ -118,10 +118,10 @@ const updateAUser = async (req, res) => {
 // create userfrom DB
 const registerAUser = async (req, res) => {
   //get data from user
-  const { username, phone, user_pwd } = req.body;
+  const { username, phone, user_pwd, location, profile } = req.body;
 
   //ensure all data is sent
-  if (!username || !phone || !user_pwd) {
+  if (!username || !phone || !user_pwd || !location || !profile) {
     res.status(404).send("Details missing");
     return;
   }
@@ -140,8 +140,8 @@ const registerAUser = async (req, res) => {
       const hashedPassword = await bcrypt.hash(user_pwd, salt);
 
       const [user] = await connectDB.query(
-        "INSERT INTO users (username, phone, user_pwd) VALUES ( ?, ?, ?)",
-        [username, phone, hashedPassword]
+        "INSERT INTO users (username, phone, user_pwd, location, profile) VALUES ( ?, ?, ?, ?, ?)",
+        [username, phone, hashedPassword, location, profile]
       );
       res.status(200).send(user);
     } catch (error) {
@@ -155,6 +155,8 @@ const registerAUser = async (req, res) => {
 const loginAUser = async (req, res) => {
   //get data from client
   const { username, user_pwd } = req.body;
+
+  // console.log(req.body);
 
   //ensure we have the data we need
   if (!username || !user_pwd) {
