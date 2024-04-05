@@ -10,6 +10,24 @@ const getAllBusinesses = async (req, res, next) => {
   }
 };
 
+//get my biz from DB
+const getMyBusinesses = async (req, res, next) => {
+  try {
+    const { business_owner } = req.body;
+    const [biz] = await connectDB.query(
+      "SELECT * FROM businesses WHERE business_owner = ?",
+      [business_owner]
+    );
+    if (biz.length == 0) {
+      res.status(500).send("Businesses Not Found");
+      return;
+    }
+    res.status(200).send(biz);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
+
 //get specific business from DB
 const getABusiness = async (req, res) => {
   try {
@@ -133,6 +151,7 @@ const createBiz = async (req, res) => {
 module.exports = {
   createBiz,
   getAllBusinesses,
+  getMyBusinesses,
   getABusiness,
   updateABiz,
   deleteABusiness,

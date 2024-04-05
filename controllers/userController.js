@@ -177,6 +177,7 @@ const loginAUser = async (req, res) => {
     try {
       // try to decrypt the password
       let db_pwd = user[0].user_pwd;
+
       let match = await bcrypt.compare(user_pwd, db_pwd);
 
       if (match) {
